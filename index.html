@@ -1,15 +1,1979 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet" />
-    <title>Bloom — Pregnancy Tracker</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bloom — Pregnancy Tracker</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap');
+
+  :root {
+    --blush: #F4B8C1;
+    --blush-soft: #FBE3E7;
+    --sage: #A8C5A0;
+    --sage-soft: #E4EFDF;
+    --lavender: #C4B5D4;
+    --lavender-soft: #EFEAF5;
+    --cream: #FDF6F0;
+    --white: #FFFFFF;
+    --charcoal: #4A4A4A;
+    --charcoal-soft: #6B6B6B;
+    --border: #E8D8E8;
+    --shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
+    --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.10);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Nunito', system-ui, -apple-system, sans-serif;
+    font-weight: 400;
+    color: var(--charcoal);
+    background: var(--cream);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, h4 { font-weight: 700; color: var(--charcoal); margin: 0; }
+  p { margin: 0; }
+  button { font-family: inherit; cursor: pointer; }
+  input, textarea, select { font-family: inherit; color: var(--charcoal); }
+
+  /* ==== Top Bar ==== */
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: var(--cream);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand-logo {
+    width: 36px; height: 36px; border-radius: 12px;
+    background: linear-gradient(135deg, var(--blush), var(--lavender));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .brand-title { font-size: 18px; font-weight: 700; letter-spacing: 0.2px; }
+  .brand-sub { font-size: 11px; color: var(--charcoal-soft); }
+  .save-info { font-size: 11px; color: var(--charcoal-soft); margin-right: 4px; }
+  .top-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+  /* ==== Buttons ==== */
+  .btn {
+    border: none;
+    border-radius: 50px;
+    background: var(--sage);
+    color: var(--white);
+    font-weight: 600;
+    font-size: 13px;
+    padding: 9px 18px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s;
+    box-shadow: var(--shadow);
+  }
+  .btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-lg); }
+  .btn:active { transform: translateY(0); }
+  .btn-blush { background: var(--blush); }
+  .btn-lavender { background: var(--lavender); }
+  .btn-ghost { background: var(--white); color: var(--charcoal); box-shadow: var(--shadow); }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+  .btn-icon {
+    border: none; background: transparent; padding: 6px;
+    border-radius: 8px; color: var(--charcoal-soft); display: inline-flex;
+    align-items: center; justify-content: center; transition: background 0.15s, color 0.15s;
+  }
+  .btn-icon:hover { background: var(--cream); color: var(--blush); }
+  .btn-icon svg { width: 16px; height: 16px; }
+
+  /* ==== Tabs ==== */
+  .tabbar {
+    position: sticky;
+    top: 64px;
+    z-index: 40;
+    background: var(--cream);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    display: flex;
+    justify-content: center;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tabbar::-webkit-scrollbar { display: none; }
+  .tab {
+    background: transparent;
+    border: none;
+    padding: 14px 22px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--charcoal-soft);
+    position: relative;
+    white-space: nowrap;
+    transition: color 0.2s;
+  }
+  .tab:hover { color: var(--charcoal); }
+  .tab.active { color: var(--charcoal); font-weight: 700; }
+  .tab.active::after {
+    content: ''; position: absolute; left: 16px; right: 16px; bottom: 0;
+    height: 3px; background: var(--blush); border-radius: 3px 3px 0 0;
+  }
+
+  /* ==== Layout ==== */
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 28px 24px 80px;
+  }
+  .section { display: none; animation: fadeIn 0.3s ease; }
+  .section.active { display: block; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .section-header {
+    margin-bottom: 22px;
+  }
+  .section-title {
+    font-size: 26px; font-weight: 700; color: var(--blush);
+    margin-bottom: 4px;
+  }
+  .section-sub { font-size: 13px; color: var(--charcoal-soft); }
+
+  .subsection {
+    margin-top: 32px;
+  }
+  .subsection-title {
+    font-size: 18px; font-weight: 700; color: var(--blush);
+    margin: 0 0 12px;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  /* ==== Cards ==== */
+  .card {
+    background: var(--white);
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+  .card-tight { padding: 16px; }
+  .card-hero {
+    background: linear-gradient(135deg, var(--blush-soft), var(--lavender-soft));
+    border: 1px solid rgba(196, 181, 212, 0.3);
+  }
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  @media (max-width: 720px) {
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    main { padding: 20px 16px 80px; }
+    .topbar { padding: 12px 16px; }
+    .tab { padding: 12px 14px; font-size: 13px; }
+  }
+
+  /* ==== Forms ==== */
+  label.field {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--charcoal-soft);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  input[type="text"], input[type="date"], input[type="time"],
+  input[type="number"], textarea, select {
+    width: 100%;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 14px;
+    background: var(--white);
+    color: var(--charcoal);
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  input:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: var(--lavender);
+    box-shadow: 0 0 0 3px rgba(196, 181, 212, 0.25);
+  }
+  textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+  select {
+    appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%234A4A4A' d='M0 0l5 6 5-6z'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+  }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .form-row.three { grid-template-columns: 1fr 1fr 1fr; }
+  .form-row.solo { grid-template-columns: 1fr; }
+  @media (max-width: 560px) {
+    .form-row, .form-row.three { grid-template-columns: 1fr; }
+  }
+  .form-actions { display: flex; gap: 8px; margin-top: 12px; }
+
+  /* ==== Custom Checkbox ==== */
+  .check {
+    display: inline-flex;
+    align-items: flex-start;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+  .check input { position: absolute; opacity: 0; pointer-events: none; }
+  .check .box {
+    width: 20px; height: 20px;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    background: var(--white);
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    margin-top: 1px;
+  }
+  .check input:checked + .box {
+    background: var(--blush);
+    border-color: var(--blush);
+  }
+  .check input:checked + .box::after {
+    content: '';
+    width: 6px; height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg) translate(-1px, -1px);
+  }
+  .check.packed .label { text-decoration: line-through; color: var(--charcoal-soft); }
+
+  /* ==== Pill Badges ==== */
+  .pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    border-radius: 50px;
+    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .pill-t1 { background: var(--lavender-soft); color: #7864A8; }
+  .pill-t2 { background: var(--sage-soft); color: #5B7E54; }
+  .pill-t3 { background: var(--blush-soft); color: #B85565; }
+  .pill-sage { background: var(--sage-soft); color: #5B7E54; }
+  .pill-blush { background: var(--blush-soft); color: #B85565; }
+  .pill-lavender { background: var(--lavender-soft); color: #7864A8; }
+  .pill-cream { background: var(--cream); color: var(--charcoal-soft); }
+
+  /* ==== Progress Bar ==== */
+  .progress {
+    height: 10px;
+    background: var(--cream);
+    border-radius: 50px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--blush), var(--lavender));
+    transition: width 0.4s ease;
+    border-radius: 50px;
+  }
+  .progress-sage .progress-fill {
+    background: linear-gradient(90deg, var(--sage), var(--lavender));
+  }
+  .progress-labels {
+    display: flex; justify-content: space-between;
+    font-size: 10px; color: var(--charcoal-soft); margin-top: 4px;
+  }
+
+  /* ==== Mood Emoji Selector ==== */
+  .mood-group { display: flex; gap: 8px; flex-wrap: wrap; }
+  .mood-group label {
+    cursor: pointer;
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: var(--cream);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    transition: all 0.15s;
+    border: 2px solid transparent;
+  }
+  .mood-group input { display: none; }
+  .mood-group input:checked + label {
+    background: var(--blush);
+    border-color: var(--blush);
+    transform: scale(1.08);
+  }
+
+  /* ==== Stars ==== */
+  .stars { display: inline-flex; gap: 4px; }
+  .star {
+    background: none; border: none; padding: 2px;
+    font-size: 24px; color: rgba(74,74,74,0.15);
+    transition: color 0.15s, transform 0.15s;
+  }
+  .star.on { color: var(--blush); }
+  .star:hover { transform: scale(1.1); }
+
+  /* ==== Symptom Pills ==== */
+  .symptom-list { display: flex; flex-wrap: wrap; gap: 8px; }
+  .symptom {
+    display: inline-flex; align-items: center;
+    padding: 6px 14px;
+    border-radius: 50px;
+    background: var(--cream);
+    color: var(--charcoal);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1.5px solid transparent;
+    transition: all 0.15s;
+  }
+  .symptom input { display: none; }
+  .symptom.on { background: var(--blush); color: white; border-color: var(--blush); }
+
+  /* ==== Gender Pills ==== */
+  .gender-group { display: inline-flex; gap: 6px; }
+  .gender-pill {
+    padding: 6px 14px; border-radius: 50px;
+    background: var(--cream); font-size: 12px; font-weight: 700;
+    cursor: pointer; transition: all 0.15s;
+    border: 1.5px solid transparent;
+  }
+  .gender-pill.on { background: var(--blush); color: white; }
+
+  /* ==== Stat Card ==== */
+  .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  @media (max-width: 560px) { .stat-row { grid-template-columns: repeat(2, 1fr); } }
+  .stat {
+    border-radius: 12px; padding: 12px; text-align: center;
+    background: var(--cream);
+  }
+  .stat .v { font-size: 22px; font-weight: 700; }
+  .stat .l { font-size: 10px; text-transform: uppercase;
+    letter-spacing: 0.04em; color: var(--charcoal-soft); margin-top: 2px; }
+  .stat-lavender { background: var(--lavender-soft); }
+  .stat-sage { background: var(--sage-soft); }
+  .stat-blush { background: var(--blush-soft); }
+
+  /* ==== Banner ==== */
+  .banner {
+    background: var(--blush-soft);
+    border-left: 4px solid var(--blush);
+    padding: 14px 18px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+  }
+  .banner-title { font-weight: 700; font-size: 13px; color: #B85565;
+    text-transform: uppercase; letter-spacing: 0.05em; }
+
+  /* ==== List Items ==== */
+  .item-row {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 12px; border-radius: 10px;
+    background: var(--cream);
+    margin-bottom: 8px;
+  }
+  .item-row .item-main { flex: 1; min-width: 0; }
+  .item-row .item-actions { display: flex; gap: 4px; flex-shrink: 0; }
+
+  /* ==== Journal Timeline ==== */
+  .timeline { position: relative; padding-left: 24px; }
+  .timeline::before {
+    content: ''; position: absolute; left: 6px; top: 8px; bottom: 8px;
+    width: 2px; background: var(--blush-soft);
+  }
+  .timeline-card { position: relative; margin-bottom: 12px; }
+  .timeline-card::before {
+    content: ''; position: absolute; left: -24px; top: 22px;
+    width: 14px; height: 14px; border-radius: 50%;
+    background: var(--blush);
+    box-shadow: 0 0 0 4px var(--cream);
+  }
+
+  /* ==== Collapsible ==== */
+  .collapsible {
+    background: var(--white);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    margin-bottom: 8px;
+  }
+  .collapsible summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 14px 18px;
+    font-weight: 600;
+    font-size: 14px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .collapsible summary::-webkit-details-marker { display: none; }
+  .collapsible summary::after {
+    content: '⌄'; font-size: 16px; transition: transform 0.2s;
+    color: var(--charcoal-soft);
+  }
+  .collapsible[open] summary::after { transform: rotate(180deg); }
+  .collapsible .content { padding: 0 18px 18px; }
+
+  /* ==== Subtabs ==== */
+  .subtabs {
+    display: inline-flex;
+    background: var(--white);
+    border-radius: 50px;
+    padding: 4px;
+    box-shadow: var(--shadow);
+    margin-bottom: 18px;
+  }
+  .subtab {
+    background: transparent; border: none;
+    padding: 8px 18px;
+    border-radius: 50px;
+    font-size: 13px; font-weight: 600;
+    color: var(--charcoal-soft);
+    transition: all 0.2s;
+  }
+  .subtab.active { background: var(--blush); color: white; }
+
+  /* ==== Empty State ==== */
+  .empty {
+    text-align: center;
+    padding: 32px 18px;
+    color: var(--charcoal-soft);
+    background: var(--white);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+  }
+  .empty .emoji { font-size: 32px; margin-bottom: 6px; }
+
+  /* ==== Hero / Dashboard ==== */
+  .hello { font-size: 14px; color: var(--charcoal-soft); }
+  .week-big { font-size: 36px; font-weight: 700; margin: 4px 0; }
+  .week-big span { color: var(--blush); }
+
+  .baby-card {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px;
+  }
+  .baby-emoji { font-size: 56px; flex-shrink: 0; }
+  .baby-size-label { font-size: 18px; font-weight: 700; }
+
+  .pill-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+
+  /* ==== Names Grid ==== */
+  .names-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
+  }
+  .name-card {
+    background: var(--white);
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: var(--shadow);
+    position: relative;
+  }
+  .name-card .fav-toggle {
+    position: absolute; top: 12px; right: 12px;
+    background: none; border: none; font-size: 18px; cursor: pointer;
+    color: rgba(74,74,74,0.25); padding: 0;
+  }
+  .name-card .fav-toggle.on { color: var(--blush); }
+
+  /* ==== Guests Table ==== */
+  .guests-list { display: flex; flex-direction: column; gap: 10px; }
+  .guest-row {
+    background: var(--white);
+    border-radius: 12px;
+    padding: 14px 16px;
+    box-shadow: var(--shadow);
+    display: grid;
+    grid-template-columns: 1.4fr 1fr 1.2fr 1.6fr auto;
+    gap: 10px;
+    align-items: center;
+  }
+  .guest-row.has-gift-unsent { background: var(--blush-soft); }
+  @media (max-width: 720px) {
+    .guest-row { grid-template-columns: 1fr 1fr; }
+    .guest-row > .actions { grid-column: 1 / -1; justify-self: end; }
+  }
+  .guest-row input[type="text"], .guest-row select { padding: 8px 12px; font-size: 13px; }
+
+  /* ==== Chart ==== */
+  .chart-wrap {
+    background: var(--cream);
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .chart-empty {
+    text-align: center;
+    padding: 28px;
+    color: var(--charcoal-soft);
+    font-size: 13px;
+  }
+
+  /* ==== Helpers ==== */
+  .row { display: flex; align-items: center; gap: 8px; }
+  .row-between { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+  .opacity-60 { opacity: 0.55; }
+  .text-sm { font-size: 13px; }
+  .text-xs { font-size: 11px; }
+  .text-muted { color: var(--charcoal-soft); }
+  .mt-2 { margin-top: 8px; }
+  .mt-3 { margin-top: 12px; }
+  .mt-4 { margin-top: 16px; }
+  .mb-2 { margin-bottom: 8px; }
+  .mb-3 { margin-bottom: 12px; }
+  .strike { text-decoration: line-through; color: var(--charcoal-soft); }
+  .hidden { display: none !important; }
+
+  .unit-toggle {
+    display: inline-flex;
+    background: var(--cream);
+    border-radius: 50px;
+    padding: 3px;
+  }
+  .unit-toggle button {
+    background: transparent; border: none;
+    padding: 5px 14px; border-radius: 50px;
+    font-size: 12px; font-weight: 600;
+    color: var(--charcoal-soft);
+  }
+  .unit-toggle button.on { background: var(--blush); color: white; }
+
+  /* ==== Print ==== */
+  @media print {
+    body { background: white; }
+    .topbar, .tabbar, .btn-icon, .form-actions, .no-print { display: none !important; }
+    .section { display: block !important; page-break-after: always; padding: 0 !important; }
+    .section:last-child { page-break-after: auto; }
+    .card { box-shadow: none; border: 1px solid #eee; page-break-inside: avoid; }
+    main { padding: 16px; max-width: none; }
+    .section-title { color: #B85565; }
+    @page { size: A4; margin: 18mm; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar no-print">
+  <div class="brand">
+    <div class="brand-logo" aria-hidden="true">🌸</div>
+    <div>
+      <div class="brand-title">Bloom</div>
+      <div class="brand-sub">Your pregnancy tracker</div>
+    </div>
+  </div>
+  <div class="top-actions">
+    <span class="save-info" id="saveInfo">Auto-saved</span>
+    <button class="btn btn-ghost btn-sm" id="btnSaveHtml" aria-label="Save filled tracker as HTML">📂 Save as HTML</button>
+    <button class="btn btn-sm" id="btnPrint" aria-label="Print or save my tracker as PDF">💾 Download My Tracker</button>
+  </div>
+</header>
+
+<nav class="tabbar no-print" role="tablist" aria-label="Sections">
+  <button class="tab active" data-tab="home" role="tab" aria-label="Home">🏠 Home</button>
+  <button class="tab" data-tab="journey" role="tab" aria-label="Journey">📆 Journey</button>
+  <button class="tab" data-tab="health" role="tab" aria-label="Health">🏥 Health</button>
+  <button class="tab" data-tab="baby" role="tab" aria-label="Baby">💛 Baby</button>
+  <button class="tab" data-tab="shower" role="tab" aria-label="Shower">🎉 Shower</button>
+</nav>
+
+<main>
+
+  <!-- ====== HOME ====== -->
+  <section class="section active" id="home" role="tabpanel">
+    <div class="section-header">
+      <h1 class="section-title">Home</h1>
+      <p class="section-sub">A warm welcome to your week — at a glance.</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="card card-hero">
+        <p class="hello">Hello, Mama 🌸</p>
+        <div class="row" style="gap:6px; margin: 2px 0 6px;">
+          <span class="text-sm">My name is</span>
+          <input type="text" id="profileName" aria-label="Your name" placeholder="Mama"
+            style="max-width: 200px; padding: 6px 10px; font-size: 14px;" />
+        </div>
+        <div class="week-big">You're <span id="weekBig">—</span> in</div>
+        <div class="pill-row mb-3">
+          <span class="pill" id="trimesterPill">Trimester</span>
+          <span class="text-xs text-muted" id="daysToGo">—</span>
+        </div>
+        <label class="field" for="dueDate">Due date</label>
+        <input type="date" id="dueDate" aria-label="Due date" />
+      </div>
+
+      <div class="card">
+        <h3 style="margin-bottom: 8px;">Baby size this week</h3>
+        <div class="baby-card">
+          <div>
+            <label class="field" for="babyWeek">Showing week</label>
+            <select id="babyWeek" aria-label="Choose week" style="max-width: 140px;"></select>
+            <div class="baby-size-label mt-3" id="babySizeLabel">—</div>
+            <p class="text-xs text-muted" id="babyWeekSub">Size guide based on the selected week.</p>
+          </div>
+          <div class="baby-emoji" id="babyEmoji" aria-hidden="true">🌱</div>
+        </div>
+      </div>
+
+      <div class="card" style="grid-column: 1 / -1;">
+        <h3 style="margin-bottom: 10px;">Pregnancy progress</h3>
+        <div class="progress"><div class="progress-fill" id="progressFill" style="width: 0%"></div></div>
+        <div class="progress-labels">
+          <span>W1</span><span>W10</span><span>W20</span><span>W30</span><span>W40</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin-bottom: 10px;">Today's intention 🌿</h3>
+        <textarea id="intention" aria-label="Today's intention" placeholder="One word, one feeling, or one tiny goal for today…"></textarea>
+      </div>
+
+      <div class="card">
+        <h3 style="margin-bottom: 12px;">Quick stats</h3>
+        <div class="stat-row">
+          <div class="stat stat-blush"><div class="v" id="qsWeek">—</div><div class="l">Week</div></div>
+          <div class="stat stat-lavender"><div class="v" id="qsTri">—</div><div class="l">Trimester</div></div>
+          <div class="stat stat-sage"><div class="v" id="qsDays">—</div><div class="l">Days to go</div></div>
+          <div class="stat"><div class="v" id="qsDue">—</div><div class="l">Due date</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== JOURNEY ====== -->
+  <section class="section" id="journey" role="tabpanel">
+    <div class="section-header">
+      <h1 class="section-title">My Journey</h1>
+      <p class="section-sub">Milestones, memories, and the little moments.</p>
+    </div>
+
+    <div class="subtabs" role="tablist">
+      <button class="subtab active" data-sub="milestones" aria-label="Weekly milestones">Milestones</button>
+      <button class="subtab" data-sub="journal" aria-label="Pregnancy journal">Journal</button>
+    </div>
+
+    <div id="subMilestones">
+      <div class="card">
+        <div class="row-between mb-3">
+          <h3>Weekly Milestones</h3>
+          <div class="row">
+            <label class="field" for="milestoneWeek" style="margin: 0;">Jump to</label>
+            <select id="milestoneWeek" aria-label="Pick milestone week" style="max-width: 130px;"></select>
+          </div>
+        </div>
+        <div id="milestoneView"></div>
+      </div>
+    </div>
+
+    <div id="subJournal" class="hidden">
+      <div class="card">
+        <div class="row-between mb-3">
+          <h3>Pregnancy Journal</h3>
+          <button class="btn btn-blush" id="btnAddJournal" aria-label="Add journal entry">+ Add Entry</button>
+        </div>
+        <div id="journalForm" class="hidden"></div>
+      </div>
+      <div id="journalList" class="timeline"></div>
+    </div>
+  </section>
+
+  <!-- ====== HEALTH ====== -->
+  <section class="section" id="health" role="tabpanel">
+    <div class="section-header">
+      <h1 class="section-title">Health & Care</h1>
+      <p class="section-sub">Appointments and weekly check-ins, all in one place.</p>
+    </div>
+
+    <div class="subtabs">
+      <button class="subtab active" data-sub="appts" aria-label="Appointments">Appointments</button>
+      <button class="subtab" data-sub="symptoms" aria-label="Symptoms log">Symptoms Log</button>
+    </div>
+
+    <div id="subAppts">
+      <div class="card">
+        <h3 class="mb-3">Add an appointment</h3>
+        <form id="apptForm" autocomplete="off">
+          <div class="form-row">
+            <div><label class="field" for="apptDate">Date</label>
+              <input type="date" id="apptDate" required aria-label="Appointment date" /></div>
+            <div><label class="field" for="apptTime">Time</label>
+              <input type="time" id="apptTime" required aria-label="Appointment time" /></div>
+          </div>
+          <div class="form-row">
+            <div><label class="field" for="apptProvider">Provider</label>
+              <input type="text" id="apptProvider" placeholder="Dr. Name" aria-label="Provider name" /></div>
+            <div><label class="field" for="apptType">Type</label>
+              <select id="apptType" aria-label="Appointment type">
+                <option>OB Visit</option><option>Ultrasound</option><option>Blood Work</option>
+                <option>Dentist</option><option>Other</option>
+              </select></div>
+          </div>
+          <div class="form-row solo">
+            <div><label class="field" for="apptNotes">Notes</label>
+              <textarea id="apptNotes" rows="2" aria-label="Notes"></textarea></div>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn" aria-label="Save appointment">Save Appointment</button>
+            <button type="button" class="btn btn-ghost" id="apptCancel" aria-label="Reset form">Reset</button>
+          </div>
+        </form>
+      </div>
+
+      <div id="apptBanner"></div>
+      <div id="apptUpcoming"></div>
+
+      <details class="collapsible">
+        <summary>Past appointments <span class="text-xs text-muted" id="pastCount"></span></summary>
+        <div class="content" id="apptPast"></div>
+      </details>
+    </div>
+
+    <div id="subSymptoms" class="hidden">
+      <div class="card">
+        <h3 class="mb-3">Weekly check-in 💛</h3>
+        <form id="logForm" autocomplete="off">
+          <div class="form-row">
+            <div>
+              <label class="field" for="logWeek">Week</label>
+              <input type="number" id="logWeek" min="1" max="40" aria-label="Week number" />
+            </div>
+            <div>
+              <label class="field">Weight</label>
+              <div class="row">
+                <input type="number" id="logWeight" step="0.1" placeholder="0" aria-label="Weight" />
+                <div class="unit-toggle">
+                  <button type="button" id="unitLbs" class="on" aria-label="Use lbs">lbs</button>
+                  <button type="button" id="unitKg" aria-label="Use kg">kg</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="field">Mood</label>
+            <div class="mood-group" id="logMood" role="radiogroup" aria-label="Mood"></div>
+          </div>
+
+          <div class="mb-3">
+            <label class="field">Energy</label>
+            <div class="stars" id="logEnergy" role="radiogroup" aria-label="Energy"></div>
+          </div>
+
+          <div class="mb-3">
+            <label class="field">Symptoms</label>
+            <div class="symptom-list" id="logSymptoms"></div>
+          </div>
+
+          <div class="mb-3">
+            <label class="field" for="logNotes">Notes</label>
+            <textarea id="logNotes" rows="2" aria-label="Notes"></textarea>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-blush" aria-label="Save check-in">Save Check-in</button>
+            <button type="button" class="btn btn-ghost" id="logReset" aria-label="Reset">Reset</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <h3 class="mb-3">Weight trend</h3>
+        <div class="chart-wrap"><div id="chartHost"></div></div>
+      </div>
+
+      <div>
+        <h3 class="mb-3">Log history</h3>
+        <div id="logList"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== BABY ====== -->
+  <section class="section" id="baby" role="tabpanel">
+    <div class="section-header">
+      <h1 class="section-title">For Baby</h1>
+      <p class="section-sub">Budget, hospital bag, and names you love.</p>
+    </div>
+
+    <div class="subtabs">
+      <button class="subtab active" data-sub="budget" aria-label="Baby budget">Budget</button>
+      <button class="subtab" data-sub="bag" aria-label="Hospital bag">Hospital Bag</button>
+      <button class="subtab" data-sub="names" aria-label="Baby names">Baby Names</button>
+    </div>
+
+    <div id="subBudget">
+      <div class="card card-hero">
+        <div class="row-between mb-3">
+          <div>
+            <p class="text-xs text-muted">Total budget</p>
+            <div class="row" style="gap:6px;">
+              <span style="font-size: 20px; font-weight: 700;">$</span>
+              <input type="number" id="budgetTotal" min="0" aria-label="Total budget"
+                style="max-width: 160px; font-size: 22px; font-weight: 700; padding: 6px 10px;" />
+            </div>
+          </div>
+          <div class="stat-row" style="grid-template-columns: repeat(2, 1fr); flex: 1; max-width: 320px;">
+            <div class="stat"><div class="v" id="budgetEst">$0</div><div class="l">Estimated</div></div>
+            <div class="stat"><div class="v" id="budgetActual">$0</div><div class="l">Spent</div></div>
+          </div>
+        </div>
+        <div class="progress"><div class="progress-fill" id="budgetProgress" style="width: 0%"></div></div>
+        <p class="text-xs text-muted mt-2" id="budgetMeta"></p>
+      </div>
+
+      <div class="card">
+        <h3 class="mb-3">By category</h3>
+        <div id="budgetCategories"></div>
+      </div>
+
+      <div class="card">
+        <h3 class="mb-3">Add an expense</h3>
+        <form id="budgetForm" autocomplete="off">
+          <div class="form-row">
+            <div><label class="field" for="bItem">Item</label>
+              <input type="text" id="bItem" required aria-label="Item name" /></div>
+            <div><label class="field" for="bCat">Category</label>
+              <select id="bCat" aria-label="Category">
+                <option>Nursery</option><option>Clothing</option><option>Gear</option>
+                <option>Medical</option><option>Baby Shower</option><option>Misc</option>
+              </select></div>
+          </div>
+          <div class="form-row three">
+            <div><label class="field" for="bEst">Estimated $</label>
+              <input type="number" id="bEst" min="0" step="0.01" aria-label="Estimated cost" /></div>
+            <div><label class="field" for="bAct">Actual $</label>
+              <input type="number" id="bAct" min="0" step="0.01" aria-label="Actual cost" /></div>
+            <div style="display: flex; align-items: flex-end;">
+              <label class="check"><input type="checkbox" id="bPur" aria-label="Purchased" /><span class="box"></span>
+                <span class="label">Purchased</span></label>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn" aria-label="Add expense">Add Expense</button>
+            <button type="button" class="btn btn-ghost" id="bReset" aria-label="Reset">Reset</button>
+          </div>
+        </form>
+      </div>
+
+      <div id="budgetList"></div>
+    </div>
+
+    <div id="subBag" class="hidden">
+      <div class="card card-hero">
+        <h3>Hospital bag 🧳</h3>
+        <p class="text-sm text-muted mt-2" id="bagSummary">0 of 0 items packed</p>
+        <div class="progress mt-3"><div class="progress-fill" id="bagProgress" style="width: 0%"></div></div>
+      </div>
+      <div id="bagSections"></div>
+    </div>
+
+    <div id="subNames" class="hidden">
+      <div class="card">
+        <h3 class="mb-3">Add a name</h3>
+        <form id="nameForm" autocomplete="off">
+          <div class="form-row">
+            <div><label class="field" for="nName">Name</label>
+              <input type="text" id="nName" required aria-label="Name" /></div>
+            <div><label class="field">Gender</label>
+              <div class="gender-group" id="nGenderGroup">
+                <button type="button" class="gender-pill on" data-gender="Girl">Girl</button>
+                <button type="button" class="gender-pill" data-gender="Boy">Boy</button>
+                <button type="button" class="gender-pill" data-gender="Neutral">Neutral</button>
+              </div>
+            </div>
+          </div>
+          <div class="form-row">
+            <div><label class="field" for="nMean">Meaning (optional)</label>
+              <input type="text" id="nMean" aria-label="Meaning" /></div>
+            <div><label class="field" for="nNotes">Notes (optional)</label>
+              <input type="text" id="nNotes" aria-label="Notes" /></div>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn" aria-label="Add name">Add Name</button>
+            <label class="check" style="margin-left: 4px;">
+              <input type="checkbox" id="nFav" aria-label="Favorite" /><span class="box"></span>
+              <span class="label">Favorite ✨</span>
+            </label>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <div class="row" style="gap:8px; flex-wrap: wrap;" id="nameFilter">
+          <button class="subtab active" data-f="All">All</button>
+          <button class="subtab" data-f="Girl">Girl</button>
+          <button class="subtab" data-f="Boy">Boy</button>
+          <button class="subtab" data-f="Neutral">Neutral</button>
+          <button class="subtab" data-f="Fav">❤️ Favorites</button>
+        </div>
+      </div>
+
+      <div class="names-grid" id="namesGrid"></div>
+    </div>
+  </section>
+
+  <!-- ====== SHOWER ====== -->
+  <section class="section" id="shower" role="tabpanel">
+    <div class="section-header">
+      <h1 class="section-title">Baby Shower</h1>
+      <p class="section-sub">Plan a celebration to remember 🎉</p>
+    </div>
+
+    <div class="card card-hero">
+      <div class="stat-row">
+        <div class="stat stat-lavender"><div class="v" id="gTotal">0</div><div class="l">Invited</div></div>
+        <div class="stat stat-sage"><div class="v" id="gYes">0</div><div class="l">Confirmed</div></div>
+        <div class="stat stat-blush"><div class="v" id="gNo">0</div><div class="l">Declined</div></div>
+        <div class="stat"><div class="v" id="gPending">0</div><div class="l">Pending</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="row-between mb-3">
+        <h3>Guest list</h3>
+        <button class="btn" id="addGuest" aria-label="Add guest">+ Add Guest</button>
+      </div>
+      <div class="guests-list" id="guestsList"></div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+/* ============================================================
+   STATIC DATA
+   ============================================================ */
+
+const BABY_SIZES = {
+  1:{label:'a tiny spark',emoji:'✨'}, 2:{label:'a pinhead',emoji:'📍'},
+  3:{label:'a poppy seed',emoji:'🌱'}, 4:{label:'a sesame seed',emoji:'🌰'},
+  5:{label:'an apple seed',emoji:'🍎'}, 6:{label:'a sweet pea',emoji:'🫛'},
+  7:{label:'a blueberry',emoji:'🫐'}, 8:{label:'a raspberry',emoji:'🍇'},
+  9:{label:'a cherry',emoji:'🍒'}, 10:{label:'a strawberry',emoji:'🍓'},
+  11:{label:'a fig',emoji:'🍈'}, 12:{label:'a lime',emoji:'🍋'},
+  13:{label:'a peach',emoji:'🍑'}, 14:{label:'a lemon',emoji:'🍋'},
+  15:{label:'an apple',emoji:'🍎'}, 16:{label:'an avocado',emoji:'🥑'},
+  17:{label:'a pear',emoji:'🍐'}, 18:{label:'a bell pepper',emoji:'🫑'},
+  19:{label:'a tomato',emoji:'🍅'}, 20:{label:'a banana',emoji:'🍌'},
+  21:{label:'a carrot',emoji:'🥕'}, 22:{label:'a papaya',emoji:'🍈'},
+  23:{label:'a grapefruit',emoji:'🍊'}, 24:{label:'an ear of corn',emoji:'🌽'},
+  25:{label:'a cauliflower',emoji:'🥦'}, 26:{label:'a head of lettuce',emoji:'🥬'},
+  27:{label:'a cucumber',emoji:'🥒'}, 28:{label:'an eggplant',emoji:'🍆'},
+  29:{label:'a butternut squash',emoji:'🎃'}, 30:{label:'a cabbage',emoji:'🥬'},
+  31:{label:'a coconut',emoji:'🥥'}, 32:{label:'a jicama',emoji:'🥔'},
+  33:{label:'a pineapple',emoji:'🍍'}, 34:{label:'a cantaloupe',emoji:'🍈'},
+  35:{label:'a honeydew melon',emoji:'🍈'}, 36:{label:'a head of romaine',emoji:'🥬'},
+  37:{label:'a bunch of swiss chard',emoji:'🌿'}, 38:{label:'a leek',emoji:'🥬'},
+  39:{label:'a mini watermelon',emoji:'🍉'}, 40:{label:'a small pumpkin',emoji:'🎃'}
+};
+
+const MILESTONES = [
+  {w:1,dev:'Your body is preparing — conception has not yet occurred.',tip:'Start taking a daily prenatal vitamin with folic acid.'},
+  {w:2,dev:'Ovulation happens this week — the egg is ready to meet sperm.',tip:'Track your cycle and stay hydrated.'},
+  {w:3,dev:'Fertilization! A tiny cluster of cells begins its journey.',tip:'Avoid alcohol and limit caffeine.'},
+  {w:4,dev:'The embryo implants in the uterine wall.',tip:'Take a home pregnancy test if your period is late.'},
+  {w:5,dev:'Tiny heart cells begin to form and beat.',tip:'Schedule your first prenatal appointment.'},
+  {w:6,dev:'Facial features start to appear and the heartbeat is detectable.',tip:'Stock up on saltines for morning sickness.'},
+  {w:7,dev:'Baby doubles in size this week — arms and legs are forming.',tip:'Rest often — your body is doing big work.'},
+  {w:8,dev:'Tiny fingers and toes are beginning to develop.',tip:'Sip ginger tea if nausea strikes.'},
+  {w:9,dev:'Baby is now officially a fetus with all major organs forming.',tip:'Start a gentle prenatal yoga routine.'},
+  {w:10,dev:'Vital organs are functional and bones are hardening.',tip:'Begin sharing the news with close family.'},
+  {w:11,dev:"Baby is moving — though you can't feel it yet.",tip:'Start a pregnancy journal to capture memories.'},
+  {w:12,dev:'Reflexes are developing — baby can curl tiny fingers.',tip:'Celebrate the end of the first trimester! 🌸'},
+  {w:13,dev:'Vocal cords are forming and fingerprints appear.',tip:'Update your wardrobe with a few comfy basics.'},
+  {w:14,dev:'Baby can make facial expressions — even tiny frowns.',tip:'Plan a babymoon getaway.'},
+  {w:15,dev:'Baby is hearing your voice for the first time.',tip:'Start reading and singing to your bump.'},
+  {w:16,dev:'You might start feeling the first flutters of movement.',tip:'Begin researching baby names.'},
+  {w:17,dev:'Baby is developing fat to keep warm after birth.',tip:'Take maternity photos to capture the bump.'},
+  {w:18,dev:'Baby can yawn, hiccup, and stretch in your belly.',tip:'Schedule your anatomy ultrasound.'},
+  {w:19,dev:"A protective coating called vernix forms on baby's skin.",tip:'Start a baby registry with the essentials.'},
+  {w:20,dev:'Halfway there! Baby has a full sleep-wake cycle.',tip:'Celebrate halfway with a special date night.'},
+  {w:21,dev:"Baby's taste buds are developing — they taste what you eat.",tip:'Try a new healthy recipe this week.'},
+  {w:22,dev:"Baby's eyebrows and eyelids are fully formed.",tip:'Set up your baby budget and savings plan.'},
+  {w:23,dev:'Baby can hear your heartbeat clearly now.',tip:'Tour potential birthing facilities.'},
+  {w:24,dev:'Baby is now viable — lungs continue developing rapidly.',tip:'Start a kick-count journal.'},
+  {w:25,dev:"Baby's skin is becoming smoother and less translucent.",tip:'Plan your baby shower with a loved one.'},
+  {w:26,dev:'Baby opens their eyes for the first time.',tip:'Talk to baby — your voice is comforting.'},
+  {w:27,dev:'Brain activity is increasing rapidly.',tip:'Sign up for a childbirth class.'},
+  {w:28,dev:'Welcome to the third trimester! Baby dreams during sleep.',tip:'Schedule your glucose screening test.'},
+  {w:29,dev:'Baby is gaining steady weight and building strength.',tip:'Start packing your hospital bag.'},
+  {w:30,dev:"Baby's eyes can track light through your skin.",tip:'Take weekly bump photos to remember.'},
+  {w:31,dev:'Lungs are nearly mature and baby is practicing breathing.',tip:'Install the car seat early to be ready.'},
+  {w:32,dev:'Baby is settling into a head-down position.',tip:'Prepare a freezer meal stash.'},
+  {w:33,dev:"Baby's bones are hardening — except the soft skull.",tip:'Wash and organize baby clothes.'},
+  {w:34,dev:"Baby's immune system is gearing up.",tip:'Pre-register at the hospital.'},
+  {w:35,dev:'Baby is plumping up with adorable rolls.',tip:'Set up the nursery and stock essentials.'},
+  {w:36,dev:'Baby is officially considered late preterm.',tip:'Finalize your birth plan with your partner.'},
+  {w:37,dev:'Baby is full term! Lungs are mature.',tip:'Practice your breathing techniques.'},
+  {w:38,dev:'Baby is shedding the protective vernix coating.',tip:"Rest as much as you can — you're so close."},
+  {w:39,dev:'Baby is fully ready — just waiting for the right moment.',tip:'Keep your phone charged and bag by the door.'},
+  {w:40,dev:'You did it, Mama! Baby is ready to meet you. 💛',tip:'Trust your body — you were made for this.'}
+];
+
+const MOODS = ['😴','😊','🥰','😢','😤'];
+const MOOD_LABELS = ['Sleepy','Happy','Loved','Tearful','Frustrated'];
+const SYMPTOMS = ['Nausea','Fatigue','Cravings','Back Pain','Heartburn','Swelling','Insomnia','Headache','Other'];
+const CATEGORIES = ['Nursery','Clothing','Gear','Medical','Baby Shower','Misc'];
+
+const DEFAULT_BAG = [
+  {section:'Mama', name:'Comfortable robe', packed:true, note:''},
+  {section:'Mama', name:'Nursing bras (2)', packed:true, note:''},
+  {section:'Mama', name:'Toiletries kit', packed:true, note:''},
+  {section:'Mama', name:'Going-home outfit', packed:false, note:'loose & comfy'},
+  {section:'Mama', name:'Slippers & cozy socks', packed:true, note:''},
+  {section:'Mama', name:'Phone charger (long cable)', packed:true, note:''},
+  {section:'Mama', name:'Lip balm & hair ties', packed:false, note:''},
+  {section:'Mama', name:'Snacks & electrolyte drinks', packed:false, note:''},
+  {section:'Mama', name:'Postpartum underwear', packed:false, note:''},
+  {section:'Baby', name:'Going-home outfit', packed:true, note:'newborn size'},
+  {section:'Baby', name:'Swaddle blankets (2)', packed:true, note:''},
+  {section:'Baby', name:'Newborn hat & mittens', packed:true, note:''},
+  {section:'Baby', name:'Onesies (3)', packed:true, note:''},
+  {section:'Baby', name:'Diapers & wipes', packed:false, note:''},
+  {section:'Baby', name:'Pacifier', packed:false, note:''},
+  {section:'Baby', name:'Baby blanket', packed:false, note:''},
+  {section:'Baby', name:'Car seat installed', packed:false, note:'check base!'},
+  {section:'Documents', name:'Photo ID', packed:false, note:''},
+  {section:'Documents', name:'Insurance card', packed:false, note:''},
+  {section:'Documents', name:'Birth plan (printed)', packed:false, note:''},
+  {section:'Documents', name:'Hospital paperwork', packed:false, note:''},
+  {section:'Documents', name:'Pediatrician info', packed:false, note:''},
+  {section:'Documents', name:'Emergency contact list', packed:false, note:''},
+  {section:'Documents', name:'Notebook & pen', packed:false, note:''},
+  {section:'Documents', name:'Birth affirmation cards', packed:false, note:''}
+];
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+
+const uid = () => Math.random().toString(36).slice(2, 10);
+const todayISO = () => new Date().toISOString().slice(0, 10);
+
+function trimesterOf(w) { return w <= 13 ? 1 : (w <= 26 ? 2 : 3); }
+function trimesterLabel(t) { return ['','First Trimester','Second Trimester','Third Trimester'][t]; }
+function trimesterClass(t) { return t === 1 ? 'pill-t1' : t === 2 ? 'pill-t2' : 'pill-t3'; }
+
+function fmtDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso + 'T00:00:00');
+  return d.toLocaleDateString(undefined, { month:'short', day:'numeric', year:'numeric' });
+}
+function fmtShortDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso + 'T00:00:00');
+  return d.toLocaleDateString(undefined, { month:'short', day:'numeric' });
+}
+function daysBetween(iso) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const t = new Date(iso + 'T00:00:00');
+  return Math.round((t - today) / 86400000);
+}
+function weekFromDue(iso) {
+  if (!iso) return 1;
+  const due = new Date(iso + 'T00:00:00');
+  const conception = new Date(due); conception.setDate(conception.getDate() - 280);
+  const days = Math.floor((new Date() - conception) / 86400000);
+  return Math.max(1, Math.min(40, Math.floor(days / 7) + 1));
+}
+function defaultDueDate() {
+  const d = new Date();
+  d.setDate(d.getDate() + 16 * 7);
+  return d.toISOString().slice(0, 10);
+}
+function escapeHtml(s) {
+  return String(s || '').replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+
+/* ============================================================
+   STATE  (persisted in localStorage)
+   ============================================================ */
+
+const STORAGE_KEY = 'bloom_pregnancy_tracker_v1';
+
+function makeDefaultState() {
+  const due = defaultDueDate();
+  const currentWeek = weekFromDue(due);
+  return {
+    profile: { name: '', dueDate: due, intention: '' },
+    babyWeek: currentWeek,
+    weekLogs: {
+      12: { feeling: 'Made it through the first trimester! 🎉', mood: 1, notes: '', logged: true },
+      20: { feeling: 'Halfway date night at our favorite spot 💛', mood: 2, notes: '', logged: true }
+    },
+    journal: [
+      { id: uid(), date: todayISO(), mood: 1, title: 'First strong kicks 💛', body: 'Today I felt the strongest little kicks — right while sipping my morning tea. I had to put my hand on my belly and just smile for a whole minute.' },
+      { id: uid(), date: (() => { const d=new Date(); d.setDate(d.getDate()-20); return d.toISOString().slice(0,10); })(),
+        mood: 1, title: 'Nursery paint day', body: 'Spent the afternoon picking paint swatches. We landed on a soft sage with cream trim. It already feels like a real little room.' }
+    ],
+    appointments: [
+      { id: uid(),
+        date: (() => { const d=new Date(); d.setDate(d.getDate()+9); return d.toISOString().slice(0,10); })(),
+        time: '10:30', provider: 'Dr. Marisol Chen', type: 'Ultrasound', notes: 'Anatomy scan — bring partner.' },
+      { id: uid(),
+        date: (() => { const d=new Date(); d.setDate(d.getDate()-18); return d.toISOString().slice(0,10); })(),
+        time: '09:00', provider: 'Dr. Marisol Chen', type: 'OB Visit', notes: 'Routine check-in. All looking great!' }
+    ],
+    healthLogs: [
+      { id: uid(), date: todayISO(), week: currentWeek, weight: 148, unit: 'lbs', mood: 1, energy: 4, symptoms: ['Cravings','Back Pain'], notes: 'Feeling strong this week 💛' },
+      { id: uid(), date: todayISO(), week: Math.max(1, currentWeek-2), weight: 145, unit: 'lbs', mood: 3, energy: 2, symptoms: ['Fatigue','Heartburn'], notes: 'Slept poorly two nights in a row.' },
+      { id: uid(), date: todayISO(), week: Math.max(1, currentWeek-4), weight: 143, unit: 'lbs', mood: 1, energy: 5, symptoms: ['Cravings'], notes: 'Best week so far!' }
+    ],
+    budget: {
+      total: 3000,
+      items: [
+        { id: uid(), name: 'Convertible Crib', category: 'Nursery', estimated: 450, actual: 420, purchased: true },
+        { id: uid(), name: 'Newborn Bundle (clothes)', category: 'Clothing', estimated: 180, actual: 165, purchased: true },
+        { id: uid(), name: 'Stroller + Car Seat Combo', category: 'Gear', estimated: 650, actual: 0, purchased: false },
+        { id: uid(), name: 'Hospital Bag Essentials', category: 'Medical', estimated: 120, actual: 95, purchased: true }
+      ]
+    },
+    bag: DEFAULT_BAG.map(b => ({ id: uid(), ...b })),
+    names: [
+      { id: uid(), name: 'Juniper', gender: 'Girl', meaning: 'Young, evergreen', notes: 'Earthy & timeless', favorite: true },
+      { id: uid(), name: 'Theodore', gender: 'Boy', meaning: 'Gift of God', notes: 'Nickname Theo 💛', favorite: true },
+      { id: uid(), name: 'Sage', gender: 'Neutral', meaning: 'Wise one', notes: '', favorite: false },
+      { id: uid(), name: 'Eleanor', gender: 'Girl', meaning: 'Bright, shining light', notes: '', favorite: false }
+    ],
+    guests: [
+      { id: uid(), name: 'Mom (Linda)', rsvp: 'Yes', dietary: 'Gluten-free', gift: 'Handmade quilt', gotGift: true, thankYou: true },
+      { id: uid(), name: 'Sarah Bennett', rsvp: 'Yes', dietary: '', gift: 'Diaper bag', gotGift: true, thankYou: false },
+      { id: uid(), name: 'Aunt Carol', rsvp: 'Pending', dietary: '', gift: '', gotGift: false, thankYou: false },
+      { id: uid(), name: 'Jess & Maya', rsvp: 'Yes', dietary: 'Vegetarian', gift: 'Board books set', gotGift: true, thankYou: true },
+      { id: uid(), name: 'Cousin Riley', rsvp: 'No', dietary: '', gift: '', gotGift: false, thankYou: false }
+    ],
+    ui: { milestoneWeek: currentWeek, journalOpen: false, nameFilter: 'All', logUnit: 'lbs' }
+  };
+}
+
+let state;
+
+function loadState() {
+  if (window.__SAVED_STATE__) return JSON.parse(JSON.stringify(window.__SAVED_STATE__));
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return makeDefaultState();
+}
+
+let saveTimer = null;
+function persist() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    const t = new Date();
+    document.getElementById('saveInfo').textContent =
+      'Saved · ' + t.toLocaleTimeString(undefined, { hour:'2-digit', minute:'2-digit' });
+  } catch (e) {
+    document.getElementById('saveInfo').textContent = 'Save unavailable';
+  }
+}
+function save() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(persist, 250);
+}
+
+/* ============================================================
+   TABS
+   ============================================================ */
+
+function setTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  document.querySelectorAll('main > .section').forEach(s => s.classList.toggle('active', s.id === name));
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => setTab(t.dataset.tab)));
+
+function setSub(parent, key) {
+  parent.querySelectorAll('.subtab').forEach(b => b.classList.toggle('active', b.dataset.sub === key));
+}
+
+/* ============================================================
+   DASHBOARD
+   ============================================================ */
+
+function renderDashboard() {
+  const w = weekFromDue(state.profile.dueDate);
+  const t = trimesterOf(w);
+  const days = Math.max(0, daysBetween(state.profile.dueDate));
+
+  document.getElementById('profileName').value = state.profile.name || '';
+  document.getElementById('dueDate').value = state.profile.dueDate || '';
+  document.getElementById('intention').value = state.profile.intention || '';
+
+  document.getElementById('weekBig').textContent = w + ' weeks';
+  const tp = document.getElementById('trimesterPill');
+  tp.className = 'pill ' + trimesterClass(t);
+  tp.textContent = trimesterLabel(t);
+  document.getElementById('daysToGo').textContent = '· ' + days + ' days to go';
+
+  // Baby size card
+  const bw = state.babyWeek || w;
+  const wSel = document.getElementById('babyWeek');
+  if (wSel.options.length === 0) {
+    for (let i = 1; i <= 40; i++) {
+      const o = document.createElement('option');
+      o.value = i; o.textContent = 'Week ' + i;
+      wSel.appendChild(o);
+    }
+  }
+  wSel.value = bw;
+  const b = BABY_SIZES[bw];
+  document.getElementById('babyEmoji').textContent = b.emoji;
+  document.getElementById('babySizeLabel').textContent = b.label;
+  document.getElementById('babyWeekSub').textContent = 'Week ' + bw + ' of 40';
+
+  document.getElementById('progressFill').style.width = ((w / 40) * 100) + '%';
+
+  document.getElementById('qsWeek').textContent = w;
+  document.getElementById('qsTri').textContent = 'T' + t;
+  document.getElementById('qsDays').textContent = days;
+  document.getElementById('qsDue').textContent = fmtShortDate(state.profile.dueDate);
+}
+
+document.getElementById('profileName').addEventListener('input', e => { state.profile.name = e.target.value; save(); });
+document.getElementById('dueDate').addEventListener('change', e => {
+  state.profile.dueDate = e.target.value;
+  state.babyWeek = weekFromDue(e.target.value);
+  save(); renderAll();
+});
+document.getElementById('intention').addEventListener('input', e => { state.profile.intention = e.target.value; save(); });
+document.getElementById('babyWeek').addEventListener('change', e => {
+  state.babyWeek = Number(e.target.value); save(); renderDashboard();
+});
+
+/* ============================================================
+   MILESTONES
+   ============================================================ */
+
+function buildMoodGroup(name, value) {
+  return MOODS.map((m, i) => `
+    <label>
+      <input type="radio" name="${name}" value="${i}" ${value === i ? 'checked' : ''} aria-label="Mood ${MOOD_LABELS[i]}" />
+      <span aria-hidden="true">${m}</span>
+    </label>`).join('');
+}
+
+function renderMilestoneSelect() {
+  const sel = document.getElementById('milestoneWeek');
+  if (sel.options.length === 0) {
+    for (let i = 1; i <= 40; i++) {
+      const o = document.createElement('option');
+      o.value = i; o.textContent = 'Week ' + i;
+      sel.appendChild(o);
+    }
+  }
+  sel.value = state.ui.milestoneWeek;
+}
+
+function renderMilestoneView() {
+  const w = state.ui.milestoneWeek;
+  const m = MILESTONES[w - 1];
+  const t = trimesterOf(w);
+  const log = state.weekLogs[w] || { feeling:'', mood:1, notes:'', logged:false };
+  const b = BABY_SIZES[w];
+
+  document.getElementById('milestoneView').innerHTML = `
+    <div class="row" style="gap:10px; margin-bottom: 12px;">
+      <span class="pill ${trimesterClass(t)}">Week ${w} · ${trimesterLabel(t)}</span>
+      <span class="text-xs text-muted">Size of ${b.label} ${b.emoji}</span>
+    </div>
+    <p class="mb-2" style="font-size: 15px;">${escapeHtml(m.dev)}</p>
+    <div class="card-tight" style="background: var(--cream); border-radius: 10px; padding: 12px; margin-bottom: 14px;">
+      <p class="text-xs" style="font-weight: 700; color: var(--charcoal-soft); text-transform: uppercase; letter-spacing: 0.04em;">Mama's tip</p>
+      <p class="text-sm mt-2">${escapeHtml(m.tip)}</p>
+    </div>
+
+    <label class="field" for="mFeeling">How I'm feeling</label>
+    <textarea id="mFeeling" rows="2" aria-label="How I'm feeling">${escapeHtml(log.feeling)}</textarea>
+
+    <label class="field mt-3">Mood</label>
+    <div class="mood-group" id="mMood">${buildMoodGroup('mMood', log.mood)}</div>
+
+    <label class="field mt-3" for="mNotes">Notes</label>
+    <textarea id="mNotes" rows="2" aria-label="Notes">${escapeHtml(log.notes)}</textarea>
+
+    <label class="check mt-3">
+      <input type="checkbox" id="mLogged" ${log.logged ? 'checked' : ''} aria-label="Week logged" />
+      <span class="box"></span><span class="label">Week logged ✅</span>
+    </label>
+  `;
+
+  document.getElementById('mFeeling').addEventListener('input', e => {
+    state.weekLogs[w] = { ...log, feeling: e.target.value }; save();
+  });
+  document.getElementById('mNotes').addEventListener('input', e => {
+    state.weekLogs[w] = { ...(state.weekLogs[w] || log), notes: e.target.value }; save();
+  });
+  document.getElementById('mLogged').addEventListener('change', e => {
+    state.weekLogs[w] = { ...(state.weekLogs[w] || log), logged: e.target.checked }; save();
+  });
+  document.querySelectorAll('#mMood input').forEach(r => r.addEventListener('change', e => {
+    state.weekLogs[w] = { ...(state.weekLogs[w] || log), mood: Number(e.target.value) }; save();
+  }));
+}
+
+document.getElementById('milestoneWeek').addEventListener('change', e => {
+  state.ui.milestoneWeek = Number(e.target.value); save(); renderMilestoneView();
+});
+
+/* ============================================================
+   JOURNAL
+   ============================================================ */
+
+function renderJournalForm() {
+  const wrap = document.getElementById('journalForm');
+  if (!state.ui.journalOpen) { wrap.classList.add('hidden'); wrap.innerHTML = ''; return; }
+  wrap.classList.remove('hidden');
+  const draft = state.ui.journalDraft || { date: todayISO(), title: '', mood: 1, body: '' };
+  state.ui.journalDraft = draft;
+  wrap.innerHTML = `
+    <div class="form-row">
+      <div><label class="field" for="jDate">Date</label>
+        <input type="date" id="jDate" value="${draft.date}" aria-label="Entry date" /></div>
+      <div><label class="field" for="jTitle">Title</label>
+        <input type="text" id="jTitle" value="${escapeHtml(draft.title)}" placeholder="A line for today…" aria-label="Title" /></div>
+    </div>
+    <label class="field">Mood</label>
+    <div class="mood-group" id="jMood">${buildMoodGroup('jMood', draft.mood)}</div>
+    <label class="field mt-3" for="jBody">Write something</label>
+    <textarea id="jBody" rows="4" placeholder="What do you want to remember from today?" aria-label="Entry body">${escapeHtml(draft.body)}</textarea>
+    <div class="form-actions">
+      <button class="btn" id="jSave" aria-label="Save entry">Save Entry</button>
+      <button class="btn btn-ghost" id="jCancel" aria-label="Cancel">Cancel</button>
+    </div>
+  `;
+  document.getElementById('jDate').addEventListener('change', e => { draft.date = e.target.value; });
+  document.getElementById('jTitle').addEventListener('input', e => { draft.title = e.target.value; });
+  document.getElementById('jBody').addEventListener('input', e => { draft.body = e.target.value; });
+  document.querySelectorAll('#jMood input').forEach(r => r.addEventListener('change', e => { draft.mood = Number(e.target.value); }));
+  document.getElementById('jSave').addEventListener('click', () => {
+    if (!draft.title.trim() && !draft.body.trim()) return;
+    state.journal.unshift({ id: uid(), date: draft.date, title: draft.title, mood: draft.mood, body: draft.body });
+    state.ui.journalOpen = false; state.ui.journalDraft = null;
+    save(); renderJournal();
+  });
+  document.getElementById('jCancel').addEventListener('click', () => {
+    state.ui.journalOpen = false; state.ui.journalDraft = null;
+    save(); renderJournal();
+  });
+}
+
+function renderJournalList() {
+  const list = document.getElementById('journalList');
+  if (state.journal.length === 0) {
+    list.innerHTML = `<div class="empty"><div class="emoji">📝</div>No entries yet — tap "Add Entry" to capture your first thought ✨</div>`;
+    return;
+  }
+  const sorted = [...state.journal].sort((a, b) => b.date.localeCompare(a.date));
+  list.innerHTML = sorted.map(j => `
+    <div class="card timeline-card">
+      <div class="row-between">
+        <div class="row" style="gap:8px;">
+          <span style="font-size: 22px;" aria-hidden="true">${MOODS[j.mood]}</span>
+          <div>
+            <p class="text-xs text-muted">${fmtDate(j.date)}</p>
+            <p style="font-weight: 700;">${escapeHtml(j.title || 'Untitled')}</p>
+          </div>
+        </div>
+        <button class="btn-icon" data-jdel="${j.id}" aria-label="Delete entry">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14H7L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
+          </svg>
+        </button>
+      </div>
+      <details class="mt-2"><summary class="text-sm" style="cursor:pointer; color: var(--blush); font-weight: 600;">Read entry</summary>
+        <p class="mt-2 text-sm">${escapeHtml(j.body).replace(/\n/g, '<br>')}</p>
+      </details>
+    </div>
+  `).join('');
+  list.querySelectorAll('[data-jdel]').forEach(btn => btn.addEventListener('click', () => {
+    state.journal = state.journal.filter(j => j.id !== btn.dataset.jdel);
+    save(); renderJournalList();
+  }));
+}
+
+function renderJournal() { renderJournalForm(); renderJournalList(); }
+
+document.getElementById('btnAddJournal').addEventListener('click', () => {
+  state.ui.journalOpen = true;
+  state.ui.journalDraft = { date: todayISO(), title: '', mood: 1, body: '' };
+  renderJournalForm();
+});
+
+document.querySelectorAll('#journey .subtab').forEach(b => b.addEventListener('click', () => {
+  setSub(b.parentElement, b.dataset.sub);
+  document.getElementById('subMilestones').classList.toggle('hidden', b.dataset.sub !== 'milestones');
+  document.getElementById('subJournal').classList.toggle('hidden', b.dataset.sub !== 'journal');
+}));
+
+/* ============================================================
+   APPOINTMENTS
+   ============================================================ */
+
+function renderAppointments() {
+  const today = todayISO();
+  const sorted = [...state.appointments].sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+  const upcoming = sorted.filter(a => a.date >= today);
+  const past = sorted.filter(a => a.date < today).reverse();
+
+  const banner = document.getElementById('apptBanner');
+  if (upcoming.length > 0) {
+    const a = upcoming[0];
+    banner.innerHTML = `
+      <div class="banner">
+        <p class="banner-title">Coming up 🗓</p>
+        <p style="font-weight: 700; margin-top: 4px;">${escapeHtml(a.type)} · ${fmtDate(a.date)} · ${escapeHtml(a.time)}</p>
+        <p class="text-sm text-muted">${escapeHtml(a.provider || 'Provider TBD')}${a.notes ? ' — ' + escapeHtml(a.notes) : ''}</p>
+      </div>`;
+  } else { banner.innerHTML = ''; }
+
+  const renderCard = (a, flat) => `
+    <div class="card ${flat ? '' : ''}" style="${flat ? 'background: var(--cream); box-shadow: none;' : ''}">
+      <div class="row-between">
+        <div>
+          <span class="pill pill-sage">${escapeHtml(a.type)}</span>
+          <p style="font-weight: 700; margin-top: 6px;">${escapeHtml(a.provider || 'Provider TBD')}</p>
+          <p class="text-xs text-muted">🕐 ${fmtDate(a.date)} · ${escapeHtml(a.time)}</p>
+          ${a.notes ? `<p class="text-xs mt-2">${escapeHtml(a.notes)}</p>` : ''}
+        </div>
+        <div class="row" style="gap:4px;">
+          <button class="btn-icon" data-aedit="${a.id}" aria-label="Edit appointment">✎</button>
+          <button class="btn-icon" data-adel="${a.id}" aria-label="Delete appointment">🗑</button>
+        </div>
+      </div>
+    </div>`;
+
+  document.getElementById('apptUpcoming').innerHTML = upcoming.length > 1
+    ? upcoming.slice(1).map(a => renderCard(a, false)).join('')
+    : (upcoming.length === 0
+      ? `<div class="empty"><div class="emoji">🩺</div>No upcoming appointments. Add one to stay on track!</div>`
+      : '');
+
+  document.getElementById('apptPast').innerHTML = past.length
+    ? past.map(a => renderCard(a, true)).join('')
+    : '<p class="text-sm text-muted">No past appointments yet.</p>';
+  document.getElementById('pastCount').textContent = past.length ? '(' + past.length + ')' : '';
+
+  document.querySelectorAll('[data-adel]').forEach(b => b.addEventListener('click', () => {
+    state.appointments = state.appointments.filter(a => a.id !== b.dataset.adel);
+    save(); renderAppointments();
+  }));
+  document.querySelectorAll('[data-aedit]').forEach(b => b.addEventListener('click', () => {
+    const a = state.appointments.find(x => x.id === b.dataset.aedit);
+    if (!a) return;
+    document.getElementById('apptDate').value = a.date;
+    document.getElementById('apptTime').value = a.time;
+    document.getElementById('apptProvider').value = a.provider;
+    document.getElementById('apptType').value = a.type;
+    document.getElementById('apptNotes').value = a.notes;
+    document.getElementById('apptForm').dataset.editing = a.id;
+    document.getElementById('apptForm').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }));
+}
+
+document.getElementById('apptForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const form = e.target;
+  const data = {
+    date: document.getElementById('apptDate').value,
+    time: document.getElementById('apptTime').value,
+    provider: document.getElementById('apptProvider').value.trim(),
+    type: document.getElementById('apptType').value,
+    notes: document.getElementById('apptNotes').value.trim()
+  };
+  if (!data.date || !data.time) return;
+  if (form.dataset.editing) {
+    state.appointments = state.appointments.map(a => a.id === form.dataset.editing ? { ...a, ...data } : a);
+    delete form.dataset.editing;
+  } else {
+    state.appointments.push({ id: uid(), ...data });
+  }
+  form.reset();
+  save(); renderAppointments();
+});
+document.getElementById('apptCancel').addEventListener('click', () => {
+  const f = document.getElementById('apptForm');
+  delete f.dataset.editing;
+  f.reset();
+});
+
+document.querySelectorAll('#health .subtab').forEach(b => b.addEventListener('click', () => {
+  setSub(b.parentElement, b.dataset.sub);
+  document.getElementById('subAppts').classList.toggle('hidden', b.dataset.sub !== 'appts');
+  document.getElementById('subSymptoms').classList.toggle('hidden', b.dataset.sub !== 'symptoms');
+}));
+
+/* ============================================================
+   HEALTH LOG
+   ============================================================ */
+
+let logDraft = { mood: 1, energy: 3, symptoms: [], unit: 'lbs' };
+
+function renderLogControls() {
+  document.getElementById('logMood').innerHTML = buildMoodGroup('logMood', logDraft.mood);
+  document.querySelectorAll('#logMood input').forEach(r => r.addEventListener('change', e => { logDraft.mood = Number(e.target.value); }));
+
+  const stars = document.getElementById('logEnergy');
+  stars.innerHTML = '';
+  for (let i = 1; i <= 5; i++) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'star' + (i <= logDraft.energy ? ' on' : '');
+    b.textContent = '★';
+    b.setAttribute('aria-label', 'Energy ' + i);
+    b.addEventListener('click', () => { logDraft.energy = i; renderLogControls(); });
+    stars.appendChild(b);
+  }
+
+  document.getElementById('logSymptoms').innerHTML = SYMPTOMS.map(s => `
+    <label class="symptom ${logDraft.symptoms.includes(s) ? 'on' : ''}">
+      <input type="checkbox" value="${s}" ${logDraft.symptoms.includes(s) ? 'checked' : ''} aria-label="${s}" />
+      ${s}
+    </label>`).join('');
+  document.querySelectorAll('#logSymptoms input').forEach(inp => inp.addEventListener('change', e => {
+    if (e.target.checked) logDraft.symptoms.push(e.target.value);
+    else logDraft.symptoms = logDraft.symptoms.filter(x => x !== e.target.value);
+    renderLogControls();
+  }));
+
+  document.getElementById('unitLbs').classList.toggle('on', logDraft.unit === 'lbs');
+  document.getElementById('unitKg').classList.toggle('on', logDraft.unit === 'kg');
+}
+
+document.getElementById('unitLbs').addEventListener('click', () => { logDraft.unit = 'lbs'; renderLogControls(); });
+document.getElementById('unitKg').addEventListener('click', () => { logDraft.unit = 'kg'; renderLogControls(); });
+
+document.getElementById('logForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const week = Number(document.getElementById('logWeek').value) || weekFromDue(state.profile.dueDate);
+  const weight = Number(document.getElementById('logWeight').value);
+  if (!weight) return;
+  state.healthLogs.unshift({
+    id: uid(),
+    date: todayISO(),
+    week,
+    weight,
+    unit: logDraft.unit,
+    mood: logDraft.mood,
+    energy: logDraft.energy,
+    symptoms: [...logDraft.symptoms],
+    notes: document.getElementById('logNotes').value.trim()
+  });
+  document.getElementById('logForm').reset();
+  logDraft = { mood: 1, energy: 3, symptoms: [], unit: logDraft.unit };
+  renderLogControls();
+  save(); renderHealthLogs(); renderChart();
+});
+
+document.getElementById('logReset').addEventListener('click', () => {
+  document.getElementById('logForm').reset();
+  logDraft = { mood: 1, energy: 3, symptoms: [], unit: logDraft.unit };
+  renderLogControls();
+});
+
+function renderHealthLogs() {
+  const list = document.getElementById('logList');
+  if (state.healthLogs.length === 0) {
+    list.innerHTML = `<div class="empty"><div class="emoji">📓</div>No check-ins yet — log your first above.</div>`;
+    return;
+  }
+  list.innerHTML = state.healthLogs.map(l => `
+    <details class="collapsible">
+      <summary>
+        <span><span aria-hidden="true">${MOODS[l.mood]}</span> &nbsp; Week ${l.week} · ${l.weight} ${l.unit} <span class="text-xs text-muted">· ${fmtDate(l.date)}</span></span>
+      </summary>
+      <div class="content">
+        <p class="text-sm">Energy: ${'⭐'.repeat(l.energy)}</p>
+        ${l.symptoms.length ? `<div class="symptom-list mt-2">${l.symptoms.map(s => `<span class="pill pill-cream">${escapeHtml(s)}</span>`).join('')}</div>` : ''}
+        ${l.notes ? `<p class="text-sm mt-2">${escapeHtml(l.notes)}</p>` : ''}
+        <button class="btn-icon mt-2" data-ldel="${l.id}" aria-label="Delete entry">🗑 Remove</button>
+      </div>
+    </details>`).join('');
+  list.querySelectorAll('[data-ldel]').forEach(b => b.addEventListener('click', () => {
+    state.healthLogs = state.healthLogs.filter(x => x.id !== b.dataset.ldel);
+    save(); renderHealthLogs(); renderChart();
+  }));
+}
+
+function renderChart() {
+  const host = document.getElementById('chartHost');
+  const pts = [...state.healthLogs]
+    .filter(l => Number.isFinite(l.weight))
+    .map(l => ({ week: l.week, weight: l.unit === 'kg' ? +(l.weight * 2.20462).toFixed(1) : l.weight }))
+    .sort((a, b) => a.week - b.week);
+
+  if (pts.length < 2) {
+    host.innerHTML = `<div class="chart-empty">Log at least 2 check-ins to see your trend.</div>`;
+    return;
+  }
+
+  const W = 600, H = 200, P = 36;
+  const minW = Math.min(...pts.map(p => p.weight));
+  const maxW = Math.max(...pts.map(p => p.weight));
+  const minWk = Math.min(...pts.map(p => p.week));
+  const maxWk = Math.max(...pts.map(p => p.week));
+  const yRange = Math.max(2, maxW - minW);
+  const xRange = Math.max(1, maxWk - minWk);
+
+  const xy = pts.map(p => ({
+    x: P + ((p.week - minWk) / xRange) * (W - 2 * P),
+    y: H - P - ((p.weight - minW) / yRange) * (H - 2 * P),
+    w: p.week, wt: p.weight
+  }));
+
+  const polyline = xy.map(p => p.x + ',' + p.y).join(' ');
+  const dots = xy.map(p => `<circle cx="${p.x}" cy="${p.y}" r="4" fill="#C4B5D4" stroke="white" stroke-width="2"><title>Week ${p.w}: ${p.wt} lbs</title></circle>`).join('');
+  const yTicks = [0, 0.5, 1].map(f => {
+    const y = H - P - f * (H - 2 * P);
+    const val = (minW + f * yRange).toFixed(0);
+    return `<line x1="${P}" y1="${y}" x2="${W - P}" y2="${y}" stroke="#EAE2DA" stroke-dasharray="3 3"/>
+            <text x="${P - 6}" y="${y + 4}" text-anchor="end" font-size="10" fill="#6B6B6B">${val}</text>`;
+  }).join('');
+  const xLabels = xy.map(p => `<text x="${p.x}" y="${H - P + 16}" text-anchor="middle" font-size="10" fill="#6B6B6B">W${p.w}</text>`).join('');
+
+  host.innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" width="100%" height="200" role="img" aria-label="Weight trend chart">
+      ${yTicks}
+      <polyline points="${polyline}" fill="none" stroke="#F4B8C1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+      ${dots}
+      ${xLabels}
+    </svg>`;
+}
+
+/* ============================================================
+   BUDGET
+   ============================================================ */
+
+function renderBudget() {
+  document.getElementById('budgetTotal').value = state.budget.total;
+  const est = state.budget.items.reduce((s, i) => s + Number(i.estimated || 0), 0);
+  const act = state.budget.items.reduce((s, i) => s + Number(i.actual || 0), 0);
+  document.getElementById('budgetEst').textContent = '$' + est.toLocaleString();
+  document.getElementById('budgetActual').textContent = '$' + act.toLocaleString();
+  document.getElementById('budgetProgress').style.width = Math.min(100, (act / Math.max(1, state.budget.total)) * 100) + '%';
+  document.getElementById('budgetMeta').textContent = state.budget.items.length + ' item' + (state.budget.items.length === 1 ? '' : 's') + ' tracked';
+
+  const byCat = {};
+  CATEGORIES.forEach(c => byCat[c] = { est: 0, act: 0 });
+  state.budget.items.forEach(i => {
+    byCat[i.category].est += Number(i.estimated || 0);
+    byCat[i.category].act += Number(i.actual || 0);
+  });
+  document.getElementById('budgetCategories').innerHTML = CATEGORIES.map(c => {
+    const v = byCat[c];
+    if (v.est === 0 && v.act === 0) return '';
+    const pct = Math.min(100, (v.act / Math.max(1, v.est)) * 100);
+    return `
+      <div class="mb-3">
+        <div class="row-between"><span class="text-sm" style="font-weight: 700;">${c}</span>
+          <span class="text-xs text-muted">$${v.act} / $${v.est}</span></div>
+        <div class="progress progress-sage mt-2"><div class="progress-fill" style="width:${pct}%"></div></div>
+      </div>`;
+  }).join('') || '<p class="text-sm text-muted">No spending tracked yet. Add an item below ✨</p>';
+
+  const list = document.getElementById('budgetList');
+  list.innerHTML = state.budget.items.length === 0
+    ? `<div class="empty"><div class="emoji">🛍️</div>No items yet — add your first to start tracking.</div>`
+    : state.budget.items.map(i => `
+        <div class="card ${i.purchased ? '' : 'opacity-60'}">
+          <div class="row-between">
+            <div>
+              <div class="pill-row">
+                <span class="pill pill-lavender">${escapeHtml(i.category)}</span>
+                ${i.purchased ? '<span class="pill pill-sage">✓ Bought</span>' : ''}
+              </div>
+              <p style="font-weight: 700; margin-top: 6px;">${escapeHtml(i.name)}</p>
+              <p class="text-xs text-muted">Est $${i.estimated || 0} · Spent $${i.actual || 0}</p>
+            </div>
+            <div class="row" style="gap: 4px;">
+              <button class="btn-icon" data-btoggle="${i.id}" aria-label="Toggle purchased">${i.purchased ? '✓' : '○'}</button>
+              <button class="btn-icon" data-bdel="${i.id}" aria-label="Delete item">🗑</button>
+            </div>
+          </div>
+        </div>`).join('');
+  list.querySelectorAll('[data-btoggle]').forEach(b => b.addEventListener('click', () => {
+    const it = state.budget.items.find(x => x.id === b.dataset.btoggle);
+    if (it) { it.purchased = !it.purchased; save(); renderBudget(); }
+  }));
+  list.querySelectorAll('[data-bdel]').forEach(b => b.addEventListener('click', () => {
+    state.budget.items = state.budget.items.filter(x => x.id !== b.dataset.bdel);
+    save(); renderBudget();
+  }));
+}
+
+document.getElementById('budgetTotal').addEventListener('input', e => {
+  state.budget.total = Number(e.target.value) || 0; save(); renderBudget();
+});
+document.getElementById('budgetForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const item = {
+    id: uid(),
+    name: document.getElementById('bItem').value.trim(),
+    category: document.getElementById('bCat').value,
+    estimated: Number(document.getElementById('bEst').value) || 0,
+    actual: Number(document.getElementById('bAct').value) || 0,
+    purchased: document.getElementById('bPur').checked
+  };
+  if (!item.name) return;
+  state.budget.items.push(item);
+  document.getElementById('budgetForm').reset();
+  save(); renderBudget();
+});
+document.getElementById('bReset').addEventListener('click', () => document.getElementById('budgetForm').reset());
+
+document.querySelectorAll('#baby .subtab').forEach(b => b.addEventListener('click', () => {
+  setSub(b.parentElement, b.dataset.sub);
+  document.getElementById('subBudget').classList.toggle('hidden', b.dataset.sub !== 'budget');
+  document.getElementById('subBag').classList.toggle('hidden', b.dataset.sub !== 'bag');
+  document.getElementById('subNames').classList.toggle('hidden', b.dataset.sub !== 'names');
+}));
+
+/* ============================================================
+   HOSPITAL BAG
+   ============================================================ */
+
+function renderBag() {
+  const total = state.bag.length;
+  const packed = state.bag.filter(b => b.packed).length;
+  document.getElementById('bagSummary').textContent = packed + ' of ' + total + ' items packed';
+  document.getElementById('bagProgress').style.width = (total ? (packed / total) * 100 : 0) + '%';
+
+  const sections = ['Mama', 'Baby', 'Documents'];
+  const labels = { Mama: 'For Mama', Baby: 'For Baby', Documents: 'Documents & Admin' };
+
+  document.getElementById('bagSections').innerHTML = sections.map(sec => `
+    <div class="card">
+      <h3 class="mb-3">${labels[sec]}</h3>
+      <div>
+        ${state.bag.filter(b => b.section === sec).map(b => `
+          <div class="item-row">
+            <label class="check ${b.packed ? 'packed' : ''}" style="flex: 1;">
+              <input type="checkbox" data-bagtoggle="${b.id}" ${b.packed ? 'checked' : ''} aria-label="${escapeHtml(b.name)}" />
+              <span class="box"></span>
+              <span class="item-main">
+                <span class="label">${escapeHtml(b.name)}</span>
+                <input type="text" class="mt-2" data-bagnote="${b.id}" value="${escapeHtml(b.note)}"
+                  placeholder="Optional note…" aria-label="Note for ${escapeHtml(b.name)}"
+                  style="padding: 6px 10px; font-size: 12px;" />
+              </span>
+            </label>
+            <button class="btn-icon" data-bagdel="${b.id}" aria-label="Remove item">🗑</button>
+          </div>`).join('')}
+      </div>
+      <div class="row mt-3" style="gap: 8px;">
+        <input type="text" data-bagadd-input="${sec}" placeholder="Add to ${sec.toLowerCase()}…" aria-label="Add to ${sec}" />
+        <button class="btn btn-sm" data-bagadd="${sec}" aria-label="Add ${sec} item">+ Add</button>
+      </div>
+    </div>`).join('');
+
+  document.querySelectorAll('[data-bagtoggle]').forEach(el => el.addEventListener('change', () => {
+    const it = state.bag.find(b => b.id === el.dataset.bagtoggle);
+    if (it) { it.packed = el.checked; save(); renderBag(); }
+  }));
+  document.querySelectorAll('[data-bagnote]').forEach(el => el.addEventListener('input', () => {
+    const it = state.bag.find(b => b.id === el.dataset.bagnote);
+    if (it) { it.note = el.value; save(); }
+  }));
+  document.querySelectorAll('[data-bagdel]').forEach(el => el.addEventListener('click', () => {
+    state.bag = state.bag.filter(b => b.id !== el.dataset.bagdel);
+    save(); renderBag();
+  }));
+  document.querySelectorAll('[data-bagadd]').forEach(btn => btn.addEventListener('click', () => {
+    const sec = btn.dataset.bagadd;
+    const input = document.querySelector(`[data-bagadd-input="${sec}"]`);
+    if (!input.value.trim()) return;
+    state.bag.push({ id: uid(), section: sec, name: input.value.trim(), packed: false, note: '' });
+    save(); renderBag();
+  }));
+}
+
+/* ============================================================
+   NAMES
+   ============================================================ */
+
+let nameDraft = { gender: 'Girl' };
+
+function renderNames() {
+  const filter = state.ui.nameFilter || 'All';
+  document.querySelectorAll('#nameFilter .subtab').forEach(b => b.classList.toggle('active', b.dataset.f === filter));
+
+  const list = state.names
+    .filter(n => filter === 'All' || (filter === 'Fav' ? n.favorite : n.gender === filter))
+    .sort((a, b) => (b.favorite ? 1 : 0) - (a.favorite ? 1 : 0));
+
+  const grid = document.getElementById('namesGrid');
+  if (list.length === 0) {
+    grid.innerHTML = `<div class="empty" style="grid-column: 1 / -1;"><div class="emoji">👶</div>No names here — add one above ✨</div>`;
+    return;
+  }
+
+  grid.innerHTML = list.map(n => `
+    <div class="name-card">
+      <button class="fav-toggle ${n.favorite ? 'on' : ''}" data-favtoggle="${n.id}" aria-label="Toggle favorite">
+        ${n.favorite ? '❤' : '♡'}
+      </button>
+      ${n.favorite ? '<div style="font-size: 12px; color: var(--blush); font-weight: 700;">✨</div>' : ''}
+      <p style="font-weight: 700; font-size: 16px;">${escapeHtml(n.name)}</p>
+      <span class="pill ${n.gender === 'Girl' ? 'pill-blush' : n.gender === 'Boy' ? 'pill-lavender' : 'pill-sage'}" style="margin-top: 4px;">${n.gender}</span>
+      ${n.meaning ? `<p class="text-xs mt-2" style="font-style: italic; color: var(--charcoal-soft);">"${escapeHtml(n.meaning)}"</p>` : ''}
+      ${n.notes ? `<p class="text-xs mt-2">${escapeHtml(n.notes)}</p>` : ''}
+      <button class="btn-icon mt-2" data-ndel="${n.id}" aria-label="Delete name">🗑</button>
+    </div>`).join('');
+
+  grid.querySelectorAll('[data-favtoggle]').forEach(b => b.addEventListener('click', () => {
+    const n = state.names.find(x => x.id === b.dataset.favtoggle);
+    if (n) { n.favorite = !n.favorite; save(); renderNames(); }
+  }));
+  grid.querySelectorAll('[data-ndel]').forEach(b => b.addEventListener('click', () => {
+    state.names = state.names.filter(x => x.id !== b.dataset.ndel);
+    save(); renderNames();
+  }));
+}
+
+document.querySelectorAll('#nGenderGroup .gender-pill').forEach(p => p.addEventListener('click', () => {
+  document.querySelectorAll('#nGenderGroup .gender-pill').forEach(x => x.classList.toggle('on', x === p));
+  nameDraft.gender = p.dataset.gender;
+}));
+
+document.getElementById('nameForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const name = document.getElementById('nName').value.trim();
+  if (!name) return;
+  state.names.unshift({
+    id: uid(), name, gender: nameDraft.gender,
+    meaning: document.getElementById('nMean').value.trim(),
+    notes: document.getElementById('nNotes').value.trim(),
+    favorite: document.getElementById('nFav').checked
+  });
+  document.getElementById('nameForm').reset();
+  save(); renderNames();
+});
+
+document.querySelectorAll('#nameFilter .subtab').forEach(b => b.addEventListener('click', () => {
+  state.ui.nameFilter = b.dataset.f; save(); renderNames();
+}));
+
+/* ============================================================
+   SHOWER
+   ============================================================ */
+
+function renderShower() {
+  document.getElementById('gTotal').textContent = state.guests.length;
+  document.getElementById('gYes').textContent = state.guests.filter(g => g.rsvp === 'Yes').length;
+  document.getElementById('gNo').textContent = state.guests.filter(g => g.rsvp === 'No').length;
+  document.getElementById('gPending').textContent = state.guests.filter(g => g.rsvp === 'Pending').length;
+
+  document.getElementById('guestsList').innerHTML = state.guests.map(g => {
+    const needsThanks = g.gotGift && !g.thankYou;
+    return `
+      <div class="guest-row ${needsThanks ? 'has-gift-unsent' : ''}">
+        <input type="text" data-gname="${g.id}" value="${escapeHtml(g.name)}" placeholder="Guest name" aria-label="Guest name" />
+        <select data-grsvp="${g.id}" aria-label="RSVP">
+          <option ${g.rsvp === 'Pending' ? 'selected' : ''}>Pending</option>
+          <option ${g.rsvp === 'Yes' ? 'selected' : ''}>Yes</option>
+          <option ${g.rsvp === 'No' ? 'selected' : ''}>No</option>
+        </select>
+        <input type="text" data-gdiet="${g.id}" value="${escapeHtml(g.dietary)}" placeholder="Dietary notes" aria-label="Dietary notes" />
+        ${g.rsvp === 'Yes' ? `
+          <div>
+            <input type="text" data-ggift="${g.id}" value="${escapeHtml(g.gift)}" placeholder="Gift received…" aria-label="Gift" style="margin-bottom: 6px;" />
+            <div class="row" style="gap: 12px;">
+              <label class="check"><input type="checkbox" data-ggot="${g.id}" ${g.gotGift ? 'checked' : ''} aria-label="Gift received" /><span class="box"></span><span class="label text-xs">Got gift</span></label>
+              <label class="check"><input type="checkbox" data-gthx="${g.id}" ${g.thankYou ? 'checked' : ''} aria-label="Thank you sent" /><span class="box"></span><span class="label text-xs">Thanks sent</span></label>
+            </div>
+          </div>
+        ` : '<div></div>'}
+        <button class="btn-icon actions" data-gdel="${g.id}" aria-label="Remove guest">🗑</button>
+      </div>`;
+  }).join('') || `<div class="empty"><div class="emoji">💌</div>No guests yet — start your list above!</div>`;
+
+  // Field bindings
+  document.querySelectorAll('[data-gname]').forEach(el => el.addEventListener('input', () => { update(el.dataset.gname, { name: el.value }); }));
+  document.querySelectorAll('[data-grsvp]').forEach(el => el.addEventListener('change', () => { update(el.dataset.grsvp, { rsvp: el.value }); renderShower(); }));
+  document.querySelectorAll('[data-gdiet]').forEach(el => el.addEventListener('input', () => { update(el.dataset.gdiet, { dietary: el.value }); }));
+  document.querySelectorAll('[data-ggift]').forEach(el => el.addEventListener('input', () => { update(el.dataset.ggift, { gift: el.value }); }));
+  document.querySelectorAll('[data-ggot]').forEach(el => el.addEventListener('change', () => { update(el.dataset.ggot, { gotGift: el.checked }); renderShower(); }));
+  document.querySelectorAll('[data-gthx]').forEach(el => el.addEventListener('change', () => { update(el.dataset.gthx, { thankYou: el.checked }); renderShower(); }));
+  document.querySelectorAll('[data-gdel]').forEach(el => el.addEventListener('click', () => {
+    state.guests = state.guests.filter(x => x.id !== el.dataset.gdel);
+    save(); renderShower();
+  }));
+
+  function update(id, patch) {
+    const g = state.guests.find(x => x.id === id);
+    if (g) { Object.assign(g, patch); save(); }
+  }
+}
+
+document.getElementById('addGuest').addEventListener('click', () => {
+  state.guests.push({ id: uid(), name: '', rsvp: 'Pending', dietary: '', gift: '', gotGift: false, thankYou: false });
+  save(); renderShower();
+});
+
+/* ============================================================
+   SAVE AS HTML
+   ============================================================ */
+
+document.getElementById('btnPrint').addEventListener('click', () => window.print());
+
+document.getElementById('btnSaveHtml').addEventListener('click', () => {
+  const html = document.documentElement.outerHTML;
+  const payload = JSON.stringify(state)
+    .replace(/</g, '\\u003c').replace(/>/g, '\\u003e').replace(/&/g, '\\u0026');
+  const injection = `<script>window.__SAVED_STATE__ = ${payload};<\/script>`;
+  const modified = html.replace(/<head>/i, '<head>' + injection);
+  const blob = new Blob(['<!doctype html>\n' + modified], { type: 'text/html' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  const stamp = new Date().toISOString().slice(0, 10);
+  a.download = 'bloom-pregnancy-tracker-' + stamp + '.html';
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 100);
+});
+
+/* ============================================================
+   RENDER ALL + INIT
+   ============================================================ */
+
+function renderAll() {
+  renderDashboard();
+  renderMilestoneSelect();
+  renderMilestoneView();
+  renderJournal();
+  renderAppointments();
+  renderLogControls();
+  renderHealthLogs();
+  renderChart();
+  renderBudget();
+  renderBag();
+  renderNames();
+  renderShower();
+}
+
+state = loadState();
+// In case sample journal entries shared ids on hot reload, ensure uniqueness:
+state.journal.forEach(j => { if (!j.id) j.id = uid(); });
+
+renderAll();
+persist();
+</script>
+</body>
 </html>
